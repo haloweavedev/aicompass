@@ -1,7 +1,7 @@
 // app/api/expert-chat/route.ts
 import { generateExpertChatResponse } from '@/lib/ai/expert-chat';
 import { currentUser } from '@clerk/nextjs/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(req: Request) {
   try {
