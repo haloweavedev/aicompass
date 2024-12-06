@@ -36,7 +36,7 @@ export default function DashboardPage() {
             Complete Your Expert Profile
           </h2>
           <p className="text-gray-600 mb-6">
-            Let's understand your expertise better to match you with the right opportunities.
+            Let&apos;s understand your expertise better to match you with the right opportunities.
           </p>
           <Button 
             onClick={() => setShowOnboarding(true)} 
