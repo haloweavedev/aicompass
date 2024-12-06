@@ -71,7 +71,7 @@ const Navbar = () => {
                     </Button>
                   </SignInButton>
                   <SignUpButton mode="modal">
-                    <Button variant="default" size="sm">
+                    <Button variant="default" size="sm" className="text-white">
                       Get Started
                     </Button>
                   </SignUpButton>
