@@ -12,7 +12,7 @@ const Features = () => {
             Powerful Features for Both Sides
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Whether you're an expert or a business, AI Compass provides the tools you need to succeed
+            Whether you&apos;re an expert or a business, AI Compass provides the tools you need to succeed
           </p>
         </div>
 
