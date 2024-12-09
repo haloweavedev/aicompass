@@ -1,4 +1,4 @@
-# [AI-Compass 🧭](https://ai-compass.vercel.app/)
+# [AI-Compass 🧭](https://aicompass.vercel.app/)
 
 ## Executive Summary
 AI-Compass revolutionizes the expert consultation process by creating AI-powered discovery forms that understand and represent an expert's methodology. Through intelligent conversations, it extracts valuable context from experts and uses this to provide meaningful action plans to potential clients, streamlining the initial consultation phase and qualifying leads effectively.

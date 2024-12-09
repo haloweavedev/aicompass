@@ -8,36 +8,3 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-
-model Expert {
-  id            String      @id @default(cuid())
-  userId        String      @unique // Clerk user ID
-  userName      String      @unique
-  name          String
-  email         String
-  expertise     String      @db.Text
-  understanding Json        // Stores the AI's understanding of expertise
-  summary       String      @db.Text
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  
-  // Add this relation
-  onboarding    ExpertOnboarding[]
-
-  @@index([userId])
-  @@index([userName])
-}
-
-model ExpertOnboarding {
-  id            String      @id @default(cuid())
-  expertId      String
-  questions     Json[]      // Stores the AI generated questions
-  answers       Json[]      // Stores the user's answers
-  score         Int         // Understanding score 0-100
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  
-  expert        Expert      @relation(fields: [expertId], references: [id])
-
-  @@index([expertId])
-}
