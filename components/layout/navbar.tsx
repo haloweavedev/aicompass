@@ -1,147 +1,150 @@
-// app/components/layout/navbar.tsx
-"use client"
+// components/layout/navbar.tsx
+'use client';
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { SignInButton, SignUpButton, useUser } from '@clerk/nextjs'
-import { Menu, X } from 'lucide-react'
-import { Button } from '../ui/button'
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuList,
-} from '@radix-ui/react-navigation-menu'
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { Menu } from 'lucide-react';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isScrolled, setIsScrolled] = useState(false)
-  const { isSignedIn } = useUser()
+  const [isOpen, setIsOpen] = useState(false);
 
-  // Handle scroll effect
+  // Handle scroll to add background and border to navbar
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+      const navbar = document.getElementById('navbar');
+      if (window.scrollY > 100) {
+        navbar?.classList.add('bg-white/80', 'border-b', 'border-gray-200', 'backdrop-blur-md');
+      } else {
+        navbar?.classList.remove('bg-white/80', 'border-b', 'border-gray-200', 'backdrop-blur-md');
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Mobile menu handling
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : 'unset';
+  }, [isOpen]);
 
   return (
-    <div
-      className={`fixed top-0 w-full z-50 transition-colors duration-200 ${
-        isScrolled ? 'bg-white/80 backdrop-blur-lg border-b' : 'bg-transparent'
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-bold text-primary">AI Compass</span>
-          </Link>
+    <>
+      <nav
+        id="navbar"
+        className="fixed top-0 left-0 right-0 z-50 transition-colors duration-300"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link href="/" className="flex items-center">
+              <span className="text-xl font-semibold text-primary">AI Compass</span>
+            </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <NavigationMenu>
-              <NavigationMenuList className="flex space-x-4">
-                <NavigationMenuItem className="list-none">
-                  <Link href="/experts" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-                    Find Experts
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem className="list-none">
-                  <Link href="/features" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-                    Features
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem className="list-none">
-                  <Link href="/pricing" className="text-sm font-medium text-gray-700 hover:text-primary transition-colors">
-                    Pricing
-                  </Link>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              <Link href="/experts" className="text-gray-600 hover:text-primary transition-colors">
+                Find Experts
+              </Link>
+              <Link href="/pricing" className="text-gray-600 hover:text-primary transition-colors">
+                Pricing
+              </Link>
 
-            {/* Auth Buttons */}
-            <div className="flex items-center space-x-4">
-              {!isSignedIn ? (
-                <>
-                  <SignInButton mode="modal">
-                    <Button variant="ghost" size="sm">
-                      Sign In
-                    </Button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <Button variant="default" size="sm" className="text-white">
-                      Get Started
-                    </Button>
-                  </SignUpButton>
-                </>
-              ) : (
-                <Link href="/dashboard">
-                  <Button variant="default" size="sm" className="text-white">
-                    Dashboard
-                  </Button>
+              <SignedIn>
+                <Link
+                  href="/dashboard"
+                  className="text-gray-600 hover:text-primary transition-colors"
+                >
+                  Dashboard
                 </Link>
-              )}
-            </div>
-          </div>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(!isOpen)}
-              className="inline-flex items-center justify-center p-2"
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      {isOpen && (
-        <div className="md:hidden px-2 pt-2 pb-3 space-y-1 bg-white/80 backdrop-blur-lg border-b">
-          <Link
-            href="/experts"
-            className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md"
-            onClick={() => setIsOpen(false)}
-          >
-            Find Experts
-          </Link>
-          <Link
-            href="/features"
-            className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md"
-            onClick={() => setIsOpen(false)}
-          >
-            Features
-          </Link>
-          <Link
-            href="/pricing"
-            className="block px-3 py-2 text-base font-medium text-gray-700 hover:text-primary hover:bg-gray-50 rounded-md"
-            onClick={() => setIsOpen(false)}
-          >
-            Pricing
-          </Link>
-          {!isSignedIn && (
-            <div className="px-3 py-2 space-y-2">
-              <SignInButton mode="modal">
-                <Button variant="ghost" className="w-full justify-center">
+              <SignedOut>
+                <Link
+                  href="/sign-in"
+                  className="bg-white text-primary px-4 py-2 rounded-full border border-primary hover:bg-primary hover:text-white transition-colors"
+                >
                   Sign In
-                </Button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <Button variant="default" className="w-full justify-center">
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="bg-primary text-white px-4 py-2 rounded-full hover:bg-primary/90 transition-colors"
+                >
                   Get Started
-                </Button>
-              </SignUpButton>
+                </Link>
+              </SignedOut>
             </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
 
-export default Navbar
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="text-gray-600 hover:text-gray-900 focus:outline-none"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div
+          className={`md:hidden absolute top-16 inset-x-0 bg-white shadow-lg rounded-b-2xl transition-transform duration-300 ${
+            isOpen ? 'transform translate-y-0 opacity-100' : 'transform -translate-y-full opacity-0'
+          }`}
+        >
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            <Link
+              href="/experts"
+              className="block px-3 py-2 text-gray-600 hover:text-primary transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Find Experts
+            </Link>
+            <Link
+              href="/pricing"
+              className="block px-3 py-2 text-gray-600 hover:text-primary transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              Pricing
+            </Link>
+
+            <SignedIn>
+              <Link
+                href="/dashboard"
+                className="block px-3 py-2 text-gray-600 hover:text-primary transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <div className="px-3 py-2">
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            </SignedIn>
+
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                className="block px-3 py-2 text-gray-600 hover:text-primary transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/sign-up"
+                className="block px-3 py-2 text-primary hover:text-primary/90 transition-colors"
+                onClick={() => setIsOpen(false)}
+              >
+                Get Started
+              </Link>
+            </SignedOut>
+          </div>
+        </div>
+      </nav>
+    </>
+  );
+};
+
+export default Navbar;
