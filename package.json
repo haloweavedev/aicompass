@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^1.0.8",
     "@clerk/nextjs": "^6.7.1",
     "@prisma/client": "^6.0.1",
     "@radix-ui/react-dialog": "^1.1.2",

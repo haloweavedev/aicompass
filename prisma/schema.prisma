@@ -1,6 +1,6 @@
 generator client {
-  provider        = "prisma-client-js"
-  binaryTargets   = ["native", "rhel-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -10,11 +10,12 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  clerkId   String   @unique
-  role      UserRole @default(UNDEFINED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String         @id @default(cuid())
+  clerkId       String         @unique
+  role          UserRole       @default(UNDEFINED)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  expertProfile ExpertProfile? // Add relation field
 
   @@index([clerkId])
 }
@@ -23,4 +24,14 @@ enum UserRole {
   UNDEFINED
   EXPERT
   SEEKER
+}
+
+model ExpertProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
+  summary      String   @db.Text // AI-generated summary
+  conversation Json[] // Array of messages
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
