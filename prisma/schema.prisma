@@ -15,7 +15,7 @@ model User {
   role          UserRole       @default(UNDEFINED)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  expertProfile ExpertProfile? // Add relation field
+  expertProfile ExpertProfile?
 
   @@index([clerkId])
 }
@@ -30,8 +30,11 @@ model ExpertProfile {
   id           String   @id @default(cuid())
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id])
-  summary      String   @db.Text // AI-generated summary
-  conversation Json[] // Array of messages
+  summary      String   @db.Text
+  conversation Json[]
+  profileData  Json?    // Structured profile data
+  understandingScore Int @default(0)
+  onboardingCompleted Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
