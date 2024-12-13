@@ -2,18 +2,22 @@
 import { auth } from "@clerk/nextjs/server"
 import { redirect } from "next/navigation"
 import { ExpertChat } from "./chat"
-import { getCurrentUserRole } from "@/app/actions/user"
+import { prisma } from "@/lib/prisma"
 
 export default async function ExpertOnboarding() {
   try {
-    const { userId } = await auth()
-    if (!userId) redirect('/sign-in')
+    const { userId: clerkId } = await auth()
+    if (!clerkId) redirect('/sign-in')
     
-    const role = await getCurrentUserRole()
+    // Check if expert has completed onboarding
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      include: { expertProfile: true }
+    })
     
-    // Only redirect if we're sure they're not an expert
-    if (role && role !== 'EXPERT') {
-      redirect('/dashboard')
+    // Only redirect if onboarding is complete
+    if (user?.expertProfile?.onboardingCompleted) {
+      redirect(`/expert/${user.expertProfile.profileSlug}`)
     }
 
     return (
@@ -23,7 +27,6 @@ export default async function ExpertOnboarding() {
     )
   } catch (error) {
     console.error('Error in expert onboarding:', error)
-    // Show error state instead of crashing
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-3xl p-12 shadow-lg">

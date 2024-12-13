@@ -1,6 +1,7 @@
 // app/expert/onboarding/chat-completion.ts
 import { type Message } from 'ai'
 import { prisma } from '@/lib/prisma'
+import slugify from 'slugify'
 
 interface ExpertProfileData {
   name: string
@@ -17,58 +18,51 @@ interface ExpertProfileData {
 }
 
 export async function checkChatCompletion(messages: Message[]) {
-  // Minimum 6 message exchanges required (3 from each side)
   if (messages.length < 6) return false
   
-  // Check if last message is from assistant and contains completion marker
-  const lastMessage = messages[messages.length - 1]
-  return lastMessage.role === 'assistant' && 
-         lastMessage.content.includes('summary accurately reflect')
+  const lastMessages = messages.slice(-2) // Get last two messages
+  
+  // Check for profile JSON in second-to-last message
+  const hasProfileJson = lastMessages[0]?.content.includes('"name":')
+  
+  // Check for completion marker in last message
+  const hasCompletionMarker = lastMessages[1]?.content.includes('PROFILE_COMPLETE')
+  
+  return hasProfileJson && hasCompletionMarker
 }
 
-export async function calculateUnderstandingScore(messages: Message[]): Promise<number> {
-  // Basic scoring based on message count and content length
-  const userMessages = messages.filter(m => m.role === 'user')
-  const avgResponseLength = userMessages.reduce((sum, msg) => 
-    sum + msg.content.length, 0) / userMessages.length
-  
-  // Score components:
-  // 1. Number of exchanges (max 40 points)
-  const exchangeScore = Math.min(userMessages.length * 10, 40)
-  
-  // 2. Average response length (max 30 points)
-  const lengthScore = Math.min(avgResponseLength / 50 * 30, 30)
-  
-  // 3. Content quality (max 30 points) - basic implementation
-  const qualityScore = userMessages.some(msg => 
-    msg.content.includes('experience') || 
-    msg.content.includes('project') || 
-    msg.content.includes('expertise')
-  ) ? 30 : 0
-  
-  return Math.round(exchangeScore + lengthScore + qualityScore)
+export async function generateProfileSlug(name: string) {
+  const baseSlug = slugify(name, { lower: true, strict: true })
+  let slug = baseSlug
+  let counter = 1
+
+  // Keep checking until we find an unused slug
+  while (await prisma.expertProfile.findUnique({ where: { profileSlug: slug } })) {
+    slug = `${baseSlug}-${counter}`
+    counter++
+  }
+
+  return slug
 }
 
-export async function generateProfileData(messages: Message[]): Promise<ExpertProfileData | null> {
-  // Extract the summary message (usually the second-to-last assistant message)
-  const summaryMessage = messages
-    .filter(m => m.role === 'assistant')
-    .slice(-2)[0]
+export async function extractProfileData(messages: Message[]): Promise<ExpertProfileData | null> {
+  // Find the message containing the JSON profile
+  const profileMessage = messages.find(m => 
+    m.role === 'assistant' && m.content.includes('"name":')
+  )
 
-  if (!summaryMessage) return null
+  if (!profileMessage) return null
 
-  // Basic extraction - in production, use OpenAI function calling for structured data
-  const nameParts = summaryMessage.content.match(/\*\*(.*?)\*\*/)?.[1]?.split('|')
-  
-  return {
-    name: nameParts?.[0]?.trim() ?? 'Unknown',
-    title: nameParts?.[1]?.trim() ?? 'Unknown',
-    company: '',
-    expertise: [],
-    description: summaryMessage.content,
-    yearsOfExperience: 0,
-    specializations: [],
-    projectHighlights: []
+  try {
+    // Extract JSON from the message
+    const jsonMatch = profileMessage.content.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return null
+
+    const profileData = JSON.parse(jsonMatch[0])
+    return profileData
+  } catch (error) {
+    console.error('Error parsing profile JSON:', error)
+    return null
   }
 }
 
@@ -76,9 +70,19 @@ export async function updateExpertProfile(
   userId: string, 
   messages: Message[]
 ): Promise<void> {
-  const understandingScore = await calculateUnderstandingScore(messages)
-  const profileData = await generateProfileData(messages)
   const isComplete = await checkChatCompletion(messages)
+  const profileData = await extractProfileData(messages)
+  
+  // Calculate understanding score based on profile completeness
+  const understandingScore = profileData ? Math.min(
+    Object.values(profileData).filter(Boolean).length * 10,
+    100
+  ) : 0
+
+  // Generate slug from name if profile is complete
+  const profileSlug = profileData?.name 
+    ? await generateProfileSlug(profileData.name)
+    : null
 
   await prisma.expertProfile.update({
     where: { userId },
@@ -87,7 +91,12 @@ export async function updateExpertProfile(
       profileData,
       understandingScore,
       onboardingCompleted: isComplete,
-      summary: profileData?.description ?? ''
+      summary: profileData?.description ?? '',
+      profileSlug,
+      displayName: profileData?.name,
+      title: profileData?.title,
+      company: profileData?.company,
+      isPublished: isComplete
     }
   })
 }

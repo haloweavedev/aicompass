@@ -3,7 +3,7 @@
 
 import { useChat } from 'ai/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
@@ -16,12 +16,16 @@ const INITIAL_MESSAGE = {
 export function ExpertChat() {
   const router = useRouter()
   const [isComplete, setIsComplete] = useState(false)
+  const [profileSlug, setProfileSlug] = useState<string | null>(null)
   
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/expert/chat',
     initialMessages: [INITIAL_MESSAGE],
     onFinish: async (message) => {
-      // Check response headers for completion status
+      // Wait a bit to ensure profile is updated
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Check completion status
       const response = await fetch('/api/expert/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -29,9 +33,10 @@ export function ExpertChat() {
       })
       
       if (response.headers.get('X-Chat-Complete') === 'true') {
+        const profileSlug = response.headers.get('X-Profile-Slug')
+        console.log('Completed with slug:', profileSlug)
+        setProfileSlug(profileSlug)
         setIsComplete(true)
-        // Wait a bit to show completion state before redirect
-        setTimeout(() => router.push('/dashboard'), 3000)
       }
     }
   })
@@ -40,16 +45,31 @@ export function ExpertChat() {
   if (isComplete) {
     return (
       <Card className="max-w-3xl w-full mx-auto p-8 text-center">
+        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-8 h-8 text-green-500" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M5 13l4 4L19 7"></path>
+          </svg>
+        </div>
         <h2 className="text-2xl font-semibold mb-4">Profile Created Successfully!</h2>
-        <p className="text-gray-600 mb-4">
-          Your expert profile has been generated. Redirecting to dashboard...
+        <p className="text-gray-600 mb-6">
+          Your expert profile has been generated and is ready to view.
         </p>
-        <Button 
-          onClick={() => router.push('/dashboard')}
-          className="mt-4"
-        >
-          Go to Dashboard
-        </Button>
+        <div className="flex gap-4 justify-center">
+          {profileSlug && (
+            <Button 
+              onClick={() => router.push(`/expert/${profileSlug}`)}
+              className="bg-primary"
+            >
+              View Profile
+            </Button>
+          )}
+          <Button 
+            onClick={() => router.push('/dashboard')}
+            variant="outline"
+          >
+            Go to Dashboard
+          </Button>
+        </div>
       </Card>
     )
   }
@@ -69,7 +89,7 @@ export function ExpertChat() {
                     : 'bg-blue-50'
                 }`}
               >
-                <p className="text-gray-800">{message.content}</p>
+                <p className="text-gray-800 whitespace-pre-wrap">{message.content}</p>
               </div>
             ))}
           </div>

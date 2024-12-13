@@ -10,14 +10,33 @@ import {
 
 const INITIAL_SYSTEM_PROMPT = `You are an AI expert profiler for AI Compass. Your goal is to understand the expert's background, expertise, and unique value proposition through a natural conversation.
 
-Follow these guidelines:
-1. Ask focused questions about their expertise, experience, and notable projects
-2. Dig deeper into specific examples and methodologies
-3. After gathering sufficient information, provide a structured summary
-4. Ask if the summary accurately reflects their expertise
-5. End the conversation only when you have a comprehensive understanding
+Follow this exact conversation structure:
+1. Start by asking about their current role and company
+2. Ask about their main expertise areas and experience
+3. Request details about 2-3 notable projects
+4. Dig deeper into methodologies and technologies used
+5. Understand their ideal client profile and project size
+6. Generate a final structured summary in this format:
 
-Keep the conversation engaging but purposeful. Use the information to create a detailed expert profile.`
+{
+  "name": "Expert's Full Name",
+  "title": "Current Title",
+  "company": "Company Name",
+  "expertise": ["Area 1", "Area 2"],
+  "yearsOfExperience": number,
+  "specializations": ["Specialization 1", "Specialization 2"],
+  "projectHighlights": [
+    {
+      "name": "Project Name",
+      "description": "Brief description"
+    }
+  ],
+  "summary": "Professional summary paragraph"
+}
+
+After generating the summary, ask if it accurately reflects their profile.
+End with: "PROFILE_COMPLETE: Thank you for your time. Your expert profile has been created."
+This marker is required to complete the onboarding.`
 
 export async function POST(req: Request) {
   const { userId: clerkId } = await auth()
@@ -28,7 +47,8 @@ export async function POST(req: Request) {
 
     // Get user from database
     const user = await prisma.user.findUnique({
-      where: { clerkId }
+      where: { clerkId },
+      include: { expertProfile: true }
     })
 
     if (!user) {
@@ -40,7 +60,7 @@ export async function POST(req: Request) {
     
     // Generate response stream
     const result = streamText({
-      model: openai('gpt-4'),
+      model: openai('gpt-4o-mini'),
       messages: [
         { role: 'system', content: INITIAL_SYSTEM_PROMPT },
         ...messages,
@@ -54,6 +74,7 @@ export async function POST(req: Request) {
     const headers = new Headers()
     if (isComplete) {
       headers.set('X-Chat-Complete', 'true')
+      headers.set('X-Profile-Slug', user.expertProfile?.profileSlug || '')
     }
 
     return result.toDataStreamResponse(headers)

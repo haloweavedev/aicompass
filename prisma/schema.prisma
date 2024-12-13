@@ -1,3 +1,4 @@
+// prisma/schema.prisma
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
@@ -30,11 +31,32 @@ model ExpertProfile {
   id           String   @id @default(cuid())
   userId       String   @unique
   user         User     @relation(fields: [userId], references: [id])
+  
+  // Profile metadata
+  profileSlug  String?  @unique
+  displayName  String?
+  title        String?
+  company      String?
+  
+  // AI-generated content
   summary      String   @db.Text
   conversation Json[]
-  profileData  Json?    // Structured profile data
-  understandingScore Int @default(0)
-  onboardingCompleted Boolean @default(false)
+  profileData  Json?    // Structured profile data from AI
+  
+  // Profile status
+  understandingScore    Int     @default(0)
+  onboardingCompleted   Boolean @default(false)
+  isPublished          Boolean @default(false)
+  
+  // Social and contact
+  website      String?
+  linkedin     String?
+  twitter      String?
+  github       String?
+  
+  // Timestamps
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  @@index([profileSlug])
 }
